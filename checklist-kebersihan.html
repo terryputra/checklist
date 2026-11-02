@@ -41,6 +41,7 @@ button{font:inherit;border:0;border-radius:12px;padding:14px;width:100%;margin-t
 </div>
 
 <div id="areas"></div>
+<div id="cam" style="display:none;position:fixed;inset:0;background:#000;z-index:9;flex-direction:column"><video id="cv" playsinline muted style="flex:1;width:100%;min-height:0;object-fit:cover"></video><div style="display:flex;gap:8px;padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))"><button class="sec" id="cx" style="margin:0;color:#fff">Batal</button><button class="go" id="cs" style="margin:0">Ambil foto</button></div></div>
 
 <div class="card">
   <label for="ct">Catatan / kendala (opsional)</label>
@@ -66,6 +67,16 @@ if(!S.photos)S.photos={};
 if(S.date!==today()){S.done={};S.photos={};S.ct="";S.date=today()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 var total=0;AREAS.forEach(function(a){total+=a[1].length});
+var camStream=null;
+function stopCam(){if(camStream){camStream.getTracks().forEach(function(t){t.stop()});camStream=null}document.getElementById("cam").style.display="none"}
+function openCam(ok,fb){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){fb();return}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false}).then(function(st){
+    camStream=st;var v=document.getElementById("cv");v.srcObject=st;document.getElementById("cam").style.display="flex";v.play();
+    document.getElementById("cs").onclick=function(){var w=v.videoWidth,h=v.videoHeight;if(!w)return;var s=Math.min(1,900/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext("2d").drawImage(v,0,0,c.width,c.height);var d=c.toDataURL("image/jpeg",0.7);stopCam();ok(d)};
+    document.getElementById("cx").onclick=stopCam
+  }).catch(function(){fb()})
+}
 var box=document.getElementById("areas");
 AREAS.forEach(function(a,i){
   var c=document.createElement("div");c.className="card";
@@ -82,7 +93,7 @@ AREAS.forEach(function(a,i){
   var fl=document.createElement("input");fl.type="file";fl.accept="image/*";fl.setAttribute("capture","environment");fl.style.display="none";
   var pb2=document.createElement("button");pb2.className="sec";
   function show(){if(S.photos[i]){im.src=S.photos[i];im.style.display="block";pb2.textContent="📷 Ganti foto "+a[0]}else{im.style.display="none";pb2.textContent="📷 Ambil foto bukti "+a[0]}}
-  pb2.onclick=function(){fl.click()};
+  pb2.onclick=function(){openCam(function(d){S.photos[i]=d;save();show();upd()},function(){fl.click()})};
   fl.onchange=function(){var f=fl.files[0];if(!f)return;var u=URL.createObjectURL(f),g=new Image();g.onload=function(){var s=Math.min(1,900/Math.max(g.width,g.height)),cv=document.createElement("canvas");cv.width=Math.round(g.width*s);cv.height=Math.round(g.height*s);cv.getContext("2d").drawImage(g,0,0,cv.width,cv.height);S.photos[i]=cv.toDataURL("image/jpeg",0.7);URL.revokeObjectURL(u);save();show();upd()};g.src=u};
   c.appendChild(im);c.appendChild(pb2);c.appendChild(fl);show();
   box.appendChild(c)
