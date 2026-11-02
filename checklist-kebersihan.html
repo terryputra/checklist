@@ -79,7 +79,7 @@ AREAS.forEach(function(a,i){
     d.appendChild(cb);d.appendChild(sp);d.id="r"+k;c.appendChild(d)
   });
   var im=document.createElement("img");im.className="ph";im.alt="Foto "+a[0];
-  var fl=document.createElement("input");fl.type="file";fl.accept="image/*";fl.style.display="none";
+  var fl=document.createElement("input");fl.type="file";fl.accept="image/*";fl.setAttribute("capture","environment");fl.style.display="none";
   var pb2=document.createElement("button");pb2.className="sec";
   function show(){if(S.photos[i]){im.src=S.photos[i];im.style.display="block";pb2.textContent="📷 Ganti foto "+a[0]}else{im.style.display="none";pb2.textContent="📷 Ambil foto bukti "+a[0]}}
   pb2.onclick=function(){fl.click()};
