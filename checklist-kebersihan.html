@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checklist Kebersihan</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f5f1;--card:#fff;--tx:#1d2420;--mu:#68716b;--ac:#1f7a52;--ln:#e2e0d8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141815;--card:#1e2420;--tx:#eef1ee;--mu:#9aa49d;--ac:#4cc38a;--ln:#2e362f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px;max-width:560px;margin:0 auto}
+h1{font-size:20px;margin:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:8px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx)}
+.bar{height:8px;background:var(--ln);border-radius:8px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--ac);width:0;transition:width .2s}
+h2{font-size:16px;margin:0 0 6px;display:flex;justify-content:space-between}
+h2 small{color:var(--mu);font-weight:400}
+.it{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--ln)}
+.it input{width:24px;height:24px;flex:none;accent-color:var(--ac)}
+.it span{flex:1}
+.it.on span{color:var(--mu);text-decoration:line-through}
+button{font:inherit;border:0;border-radius:12px;padding:14px;width:100%;margin-top:8px;font-weight:600;cursor:pointer}
+.go{background:var(--ac);color:#fff}
+.sec{background:transparent;color:var(--mu);border:1px solid var(--ln)}
+.ph{display:none;width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-top:10px}
+</style>
+</head>
+<body>
+<h1>Checklist Kebersihan Harian</h1>
+
+<div class="card">
+  <label for="nm">Nama staff</label>
+  <input id="nm" placeholder="Nama Anda">
+  <label for="sh">Shift</label>
+  <select id="sh"><option>Buka</option><option>Tengah</option><option>Tutup</option></select>
+  <div id="pt" style="margin-top:10px;font-size:14px"></div>
+  <div class="bar"><i id="pb"></i></div>
+</div>
+
+<div id="areas"></div>
+
+<div class="card">
+  <label for="ct">Catatan / kendala (opsional)</label>
+  <textarea id="ct" rows="3" placeholder="Contoh: keran toilet bocor"></textarea>
+  <label for="wa">Nomor WhatsApp cadangan (hanya dipakai jika kirim foto otomatis gagal)</label>
+  <input id="wa" inputmode="numeric" placeholder="628...">
+  <button class="go" id="send">Kirim laporan + foto ke WhatsApp</button>
+  <button class="sec" id="rst">Mulai checklist baru</button>
+</div>
+
+<script>
+var AREAS=[
+["Dapur",["Lantai bersih dan kering","Meja kerja disanitasi","Tempat sampah dikosongkan","Kulkas rapi dan berlabel"]],
+["Area makan",["Meja dan kursi dilap","Lantai disapu dan dipel","Kaca bersih"]],
+["Toilet",["Lantai, wastafel, kloset bersih","Sabun dan tisu tersedia"]],
+["Kasir / bar",["Meja bersih","Mesin dan peralatan dilap"]],
+["Area luar",["Teras disapu","Tempat sampah luar dikosongkan"]]
+];
+var KEY="cek-kebersihan-v2",S={done:{},photos:{},nm:"",sh:"Buka",ct:"",wa:"",date:""};
+function today(){return new Date().toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})}
+try{var r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}
+if(!S.photos)S.photos={};
+if(S.date!==today()){S.done={};S.photos={};S.ct="";S.date=today()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var total=0;AREAS.forEach(function(a){total+=a[1].length});
+var box=document.getElementById("areas");
+AREAS.forEach(function(a,i){
+  var c=document.createElement("div");c.className="card";
+  var h=document.createElement("h2");h.innerHTML="<span>"+a[0]+"</span><small id='c"+i+"'></small>";
+  c.appendChild(h);
+  a[1].forEach(function(t,j){
+    var k=i+"-"+j,d=document.createElement("label");d.className="it";d.style.margin=0;d.style.color="inherit";d.style.fontSize="16px";
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!S.done[k];
+    var sp=document.createElement("span");sp.textContent=t;
+    cb.onchange=function(){S.done[k]=cb.checked;save();upd()};
+    d.appendChild(cb);d.appendChild(sp);d.id="r"+k;c.appendChild(d)
+  });
+  var im=document.createElement("img");im.className="ph";im.alt="Foto "+a[0];
+  var fl=document.createElement("input");fl.type="file";fl.accept="image/*";fl.style.display="none";
+  var pb2=document.createElement("button");pb2.className="sec";
+  function show(){if(S.photos[i]){im.src=S.photos[i];im.style.display="block";pb2.textContent="📷 Ganti foto "+a[0]}else{im.style.display="none";pb2.textContent="📷 Ambil foto bukti "+a[0]}}
+  pb2.onclick=function(){fl.click()};
+  fl.onchange=function(){var f=fl.files[0];if(!f)return;var u=URL.createObjectURL(f),g=new Image();g.onload=function(){var s=Math.min(1,900/Math.max(g.width,g.height)),cv=document.createElement("canvas");cv.width=Math.round(g.width*s);cv.height=Math.round(g.height*s);cv.getContext("2d").drawImage(g,0,0,cv.width,cv.height);S.photos[i]=cv.toDataURL("image/jpeg",0.7);URL.revokeObjectURL(u);save();show();upd()};g.src=u};
+  c.appendChild(im);c.appendChild(pb2);c.appendChild(fl);show();
+  box.appendChild(c)
+});
+function upd(){
+  var n=0;
+  AREAS.forEach(function(a,i){
+    var m=0;
+    a[1].forEach(function(t,j){var k=i+"-"+j,on=!!S.done[k];if(on){m++;n++}document.getElementById("r"+k).classList.toggle("on",on)});
+    document.getElementById("c"+i).textContent=m+"/"+a[1].length
+  });
+  document.getElementById("pt").textContent=n+" dari "+total+" item selesai · "+S.date;
+  document.getElementById("pb").style.width=(n/total*100)+"%"
+}
+var nm=document.getElementById("nm"),sh=document.getElementById("sh"),ct=document.getElementById("ct"),wa=document.getElementById("wa");
+nm.value=S.nm||"";sh.value=S.sh||"Buka";ct.value=S.ct||"";wa.value=S.wa||"";
+[nm,sh,ct,wa].forEach(function(e){e.oninput=function(){S.nm=nm.value;S.sh=sh.value;S.ct=ct.value;S.wa=wa.value;save()}});
+document.getElementById("send").onclick=function(){
+  var n=0,miss=[],lines=[];
+  AREAS.forEach(function(a,i){
+    var m=0;
+    a[1].forEach(function(t,j){if(S.done[i+"-"+j]){m++;n++}else miss.push(a[0]+": "+t)});
+    lines.push((m===a[1].length?"✅ ":"⚠️ ")+a[0]+" ("+m+"/"+a[1].length+")")
+  });
+  var msg="*Laporan Kebersihan*\n"+S.date+" · Shift "+S.sh+"\nStaff: "+(S.nm||"-")+"\n\n"+lines.join("\n")+"\n\nSelesai: "+n+"/"+total;
+  if(miss.length)msg+="\n\n*Belum dikerjakan:*\n- "+miss.join("\n- ");
+  if(S.ct)msg+="\n\n*Catatan:* "+S.ct;
+  var nop=[];AREAS.forEach(function(a,i){if(!S.photos[i])nop.push(a[0])});
+  if(nop.length){alert("Foto bukti belum ada untuk: "+nop.join(", "));return}
+  var files=AREAS.map(function(a,i){var p=S.photos[i].split(",")[1],b=atob(p),u=new Uint8Array(b.length);for(var x=0;x<b.length;x++)u[x]=b.charCodeAt(x);return new File([u],a[0].replace(/\W+/g,"-")+".jpg",{type:"image/jpeg"})});
+  function fallback(){alert("HP ini tidak bisa mengirim foto otomatis. Laporan teks akan dibuka di WhatsApp, foto kirim manual.");var num=(S.wa||"").replace(/\D/g,"");window.open("https://wa.me/"+num+"?text="+encodeURIComponent(msg),"_blank")}
+  try{
+    if(navigator.canShare&&navigator.canShare({files:files})){navigator.share({text:msg,files:files}).catch(function(e){if(!e||e.name!=="AbortError")fallback()})}else fallback()
+  }catch(e){fallback()}
+};
+document.getElementById("rst").onclick=function(){
+  if(!confirm("Mulai checklist baru? Centang akan dihapus."))return;
+  S.done={};S.ct="";ct.value="";save();
+  document.querySelectorAll(".it input").forEach(function(c){c.checked=false});upd()
+};
+upd();save();
+</script>
+</body>
+</html>
